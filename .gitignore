@@ -1,0 +1,4 @@
+output/
+!output/.gitkeep
+.idea
+cmake-build-debug
