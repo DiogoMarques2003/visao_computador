@@ -290,6 +290,42 @@ int ex_vc4_rgb_to_hsv() {
     return 0;
 }
 
+int ex_vc4_hsv_segmentation() {
+    IVC *image_src, *image_dst;
+
+    image_src = vc_read_image("../Images/HSV/HSVTestImage01.ppm");
+    if (image_src == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image_dst = vc_image_new(image_src->width, image_src->height, 1, 255);
+    if (image_dst == NULL) {
+        vc_image_free(image_src);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    if (vc_hsv_segmentation(image_src, image_dst, 30, 70, 50, 100, 60, 100) == 0) {
+        vc_image_free(image_src);
+        vc_image_free(image_dst);
+        printf("ERROR -> vc_hsv_segmentation():\n\tCan't convert the image!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_write_image("../output/vc4_hsv_segmentation.ppm", image_dst);
+    vc_image_free(image_src);
+    vc_image_free(image_dst);
+
+    printf("Press any key to exit...\n");
+    getchar();
+
+    return 0;
+}
+
 int main() {
     //ex_vc3_1();
     //ex_vc3_2();
@@ -303,4 +339,6 @@ int main() {
     //ex_vc4_rbg_to_gray();
 
     ex_vc4_rgb_to_hsv();
+
+    ex_vc4_hsv_segmentation();
 }

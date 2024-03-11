@@ -536,15 +536,11 @@ int vc_rgb_to_gray(IVC *src, IVC *dst) {
 //Converter rgb para hsv
 int vc_rgb_to_hsv(IVC *src, IVC *dst) {
     unsigned char *datasrc = (unsigned char*) src->data;
-    int bytesperline_src = src->width * src->channels;
     int channels_src = src->channels;
     unsigned char *datadst = (unsigned  char*) dst->data;
-    int bytesperline_dst = dst->width * dst->channels;
-    int channels_dst = dst->channels;
     int width = src->width;
     int height = src->height;
-    int x, y;
-    long int pos_src, pos_dst;
+    int x;
     float rf, gf, bf;
     float max, min, delta;
     float h, s, v;
@@ -554,8 +550,73 @@ int vc_rgb_to_hsv(IVC *src, IVC *dst) {
     if ((src->width != dst->width) || (src->height != dst->height)) return 0;
     if ((src->channels != 3) || (dst->channels != 3)) return 0;
 
-    for (y = 0; y < height; y++) {
-        for (x = 0; x < width; x++) {
+    float size = width * height * channels_src;
+
+    for (x = 0; x < size; x += channels_src) {
+        rf = (float)datasrc[x];
+        gf = (float)datasrc[x + 1];
+        bf = (float)datasrc[x + 2];
+
+        max = (rf > gf ? (rf > bf ? rf : bf) : (gf > bf ? gf : bf));
+        min = (rf < gf ? (rf < bf ? rf : bf) : (gf < bf ? gf : bf));
+        delta = max - min;
+
+        v = max;
+        if (v == 0.0f) {
+            h = 0.0f;
+            s = 0.0f;
+        } else {
+            // Saturation toma valores entre [0,255]
+            s = (delta / max) * 255.0f;
+
+            if (s == 0.0f) {
+                h = 0.0f;
+            } else {
+                // Hue toma valores entre [0,360]
+                if ((max == rf) && (gf >= bf)) {
+                    h = 60.0f * (gf - bf) / delta;
+                } else if ((max == rf) && (bf > gf)) {
+                    h = 360.0f + 60.0f * (gf - bf) / delta;
+                } else if (max == gf) {
+                    h = 120.0f + 60.0f * (bf - rf) / delta;
+                } else {
+                    h = 240.0f + 60.0f * (rf - gf) / delta;
+                }
+            }
+        }
+
+        datadst[x] = (unsigned char) ((h / 360.0f) * 255.0f);
+        datadst[x + 1] = (unsigned char) (s);
+        datadst[x + 2] = (unsigned char) (v);
+    }
+
+    return 1;
+}
+
+// hmin,hmax = [0, 360]; smin,smax = [0, 100]; vmin,vmax = [0, 100]
+int vc_hsv_segmentation(IVC *src, IVC *dst, int hmin, int hmax, int smin,
+                        int smax, int vmin, int vmax) {
+    unsigned char *datasrc = (unsigned char * ) src->data;
+    int bytesperline_src = src->width * src->channels;
+    int channels_src = src->channels;
+    unsigned char *datadst = (unsigned char * ) dst->data;
+    int bytesperline_dst = dst->width * dst->channels;
+    int channels_dst = dst->channels;
+    int width = src->width;
+    int height = src->height;
+    int x, y;
+    float max, min, hue, sat, valor, delta;
+    long int pos_src, pos_dst;
+    float rf, gf, bf;
+
+    //verificalão de errors
+    if((src->width <= 0 ) || (src->height <= 0) || (src->data == NULL)) return 0;
+    if((src->width != dst->width) || (src->height != dst->height)) return 0;
+    if((src->channels != 3 ) || (dst->channels != 1))return 0 ;
+
+    // meter em hsv
+    for(y=0; y<height ; y++){
+        for(x=0; x<width ; x++){
             pos_src = y * bytesperline_src + x * channels_src;
             pos_dst = y * bytesperline_dst + x * channels_dst;
 
@@ -563,34 +624,50 @@ int vc_rgb_to_hsv(IVC *src, IVC *dst) {
             gf = (float) datasrc[pos_src + 1];
             bf = (float) datasrc[pos_src + 2];
 
-            max = fmax(fmax(rf, gf), bf);
-            min = fmin(fmin(rf, gf), bf);
+            max = (rf > gf ? (rf > bf ? rf : bf) : (gf > bf ? gf : bf));
+            min = (rf < gf ? (rf < bf ? rf : bf) : (gf < bf ? gf : bf));
             delta = max - min;
 
-            if (max == 0 || delta == 0) {
-                h = 0;
-                s = 0;
-            } else {
-                s = delta / max;
+            //calcular value
+            valor = max;
 
-                if (max == rf && (gf >= bf)) {
-                    h = 60 * (gf - bf) / delta;
-                } else if (max == rf && (bf > gf)) {
-                    h = 360 + 60 * (gf - bf) / delta;
-                } else if (max == gf) {
-                    h = 120 + 60 * (bf - rf) / delta;
-                } else {
-                    h = 240 + 60 * (rf - gf) / delta;
+            //calcular saturação
+            if (max==0 || max == min) {
+                sat=0;
+                hue=0;
+            } else {
+                sat= delta  * 100.0f / valor;
+                //calcular hue
+                // Quando o vermelho é o maior, Hue será um ângulo entre 300 e 360 ou entre 0 e 60
+                if (rf==max && gf>=bf ) {
+                    hue = 60.0f * (gf - bf) / delta ;
+                } else if (rf==max && bf>gf ) {
+                    hue = 360 + 60.0f * (gf - bf) / delta ;
+                } else if(gf==max) {
+                    hue = 120 + 60.0f * (bf - rf) / delta;
+                } else if (max==bf) {
+                    hue = 240 + 60.0f * (rf - gf) / delta ;
                 }
             }
 
-            v = max;
-
-            datadst[pos_dst] = (unsigned char) (h / 360) * 255;
-            datadst[pos_dst + 1] = (unsigned char) (s * 255);
-            datadst[pos_dst + 2] = (unsigned char) v;
+            //se o hmin for maior que o hmax  entao hmin ate 360 e de 0 ate hmax
+            if (hmin > hmax ) {
+                if ((hue >= 0 && hue <= hmax || hue <= 360 && hue >= hmin) && sat <= smax && sat  >= smin && valor <= vmax / 100.0f * 255 && valor >= vmin / 100.0f * 255)
+                    datadst[pos_dst] = 255;
+                else
+                    datadst[pos_dst] = 0;
+            } else {
+                if (hue <= hmax && hue >= hmin && sat <= smax && sat  >= smin && valor <= vmax / 100.0f * 255 && valor >= vmin / 100.0f * 255)
+                    datadst[pos_dst] = 255;
+                else
+                    datadst[pos_dst] = 0;
+            }
         }
     }
 
     return 1;
+}
+
+int vc_scale_gray_to_color_palette(IVC *src, IVC *dst) {
+
 }
