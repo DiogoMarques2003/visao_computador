@@ -14,6 +14,7 @@
 #include <ctype.h>
 #include <string.h>
 #include <malloc.h>
+#include <math.h>
 #include "vc.h"
 
 
@@ -526,6 +527,68 @@ int vc_rgb_to_gray(IVC *src, IVC *dst) {
             bf = (float) datasrc[pos_src + 2];
 
             datadst[pos_dst] = (unsigned char) ((rf * 0.299) + (gf * 0.587) + (bf * 0.114));
+        }
+    }
+
+    return 1;
+}
+
+//Converter rgb para hsv
+int vc_rgb_to_hsv(IVC *src, IVC *dst) {
+    unsigned char *datasrc = (unsigned char*) src->data;
+    int bytesperline_src = src->width * src->channels;
+    int channels_src = src->channels;
+    unsigned char *datadst = (unsigned  char*) dst->data;
+    int bytesperline_dst = dst->width * dst->channels;
+    int channels_dst = dst->channels;
+    int width = src->width;
+    int height = src->height;
+    int x, y;
+    long int pos_src, pos_dst;
+    float rf, gf, bf;
+    float max, min, delta;
+    float h, s, v;
+
+    //Verificação de erros
+    if ((src->width <= 0) || (src->height <= 0) || (src->data == NULL)) return 0;
+    if ((src->width != dst->width) || (src->height != dst->height)) return 0;
+    if ((src->channels != 3) || (dst->channels != 3)) return 0;
+
+    for (y = 0; y < height; y++) {
+        for (x = 0; x < width; x++) {
+            pos_src = y * bytesperline_src + x * channels_src;
+            pos_dst = y * bytesperline_dst + x * channels_dst;
+
+            rf = (float) datasrc[pos_src];
+            gf = (float) datasrc[pos_src + 1];
+            bf = (float) datasrc[pos_src + 2];
+
+            max = fmax(fmax(rf, gf), bf);
+            min = fmin(fmin(rf, gf), bf);
+            delta = max - min;
+
+            if (max == 0 || delta == 0) {
+                h = 0;
+                s = 0;
+            } else {
+                s = delta / max;
+
+                if (max == rf && (gf >= bf)) {
+                    h = 60 * (gf - bf) / delta;
+                } else if (max == rf && (bf > gf)) {
+                    h = 360 + 60 * (gf - bf) / delta;
+                } else if (max == gf) {
+                    h = 120 + 60 * (bf - rf) / delta;
+                } else {
+                    h = 240 + 60 * (rf - gf) / delta;
+                }
+            }
+
+            v = max;
+
+            datadst[pos_dst] = (unsigned char) (h / 360) * 255;
+            datadst[pos_dst + 1] = (unsigned char) (s * 255);
+            datadst[pos_dst + 2] = (unsigned char) v;
         }
     }
 

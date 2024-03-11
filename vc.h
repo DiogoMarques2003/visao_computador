@@ -45,3 +45,5 @@ int vc_rgb_get_green_gray(IVC *srcdst);
 int vc_rgb_get_blue_gray(IVC *srcdst);
 
 int vc_rgb_to_gray(IVC *src, IVC *dst);
+
+int vc_rgb_to_hsv(IVC *src, IVC *dst);
