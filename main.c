@@ -326,6 +326,80 @@ int ex_vc4_hsv_segmentation() {
     return 0;
 }
 
+int ex_vc4_gray_to_rgb() {
+    IVC *image_src, *image_dst;
+
+    image_src = vc_read_image("../Images/OldClassic/bridge.pgm");
+    if (image_src == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image_dst = vc_image_new(image_src->width, image_src->height, 3, 255);
+    if (image_dst == NULL) {
+        vc_image_free(image_src);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    if (vc_scale_gray_to_color_palette(image_src, image_dst) == 0) {
+        vc_image_free(image_src);
+        vc_image_free(image_dst);
+        printf("ERROR -> vc_scale_gray_to_color_palette():\n\tCan't convert the image!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_write_image("../output/vc4_gray_to_rgb.ppm", image_dst);
+    vc_image_free(image_src);
+    vc_image_free(image_dst);
+
+    printf("Press any key to exit...\n");
+    getchar();
+
+    return 0;
+}
+
+int ex_1() {
+    IVC *image_src, *image_dst;
+
+    image_src = vc_read_image("../Images/EX1/PET-Normal.ppm");
+    if (image_src == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image_dst = vc_image_new(image_src->width, image_src->height, 1, 255);
+    if (image_dst == NULL) {
+        vc_image_free(image_src);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    if (vc_hsv_segmentation(image_src, image_dst, 291 , 45, 50, 100, 60, 100) == 0) {
+        vc_image_free(image_src);
+        vc_image_free(image_dst);
+        printf("ERROR -> vc_hsv_segmentation():\n\tCan't convert the image!\n");
+        getchar();
+        return 0;
+    }
+
+    printf("%d pixeis com 100%% de atividade.\n", vc_image_white_pixel_count(image_dst));
+
+    vc_write_image("../output/vc_ex1.ppm", image_dst);
+    vc_image_free(image_src);
+    vc_image_free(image_dst);
+
+    printf("Press any key to exit...\n");
+    getchar();
+
+    return 0;
+}
+
 int main() {
     //ex_vc3_1();
     //ex_vc3_2();
@@ -338,7 +412,11 @@ int main() {
     //ex_vc4_img_blue();
     //ex_vc4_rbg_to_gray();
 
-    ex_vc4_rgb_to_hsv();
+    //ex_vc4_rgb_to_hsv();
 
-    ex_vc4_hsv_segmentation();
+    //ex_vc4_hsv_segmentation();
+
+    //ex_vc4_gray_to_rgb();
+
+    ex_1();
 }

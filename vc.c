@@ -669,5 +669,62 @@ int vc_hsv_segmentation(IVC *src, IVC *dst, int hmin, int hmax, int smin,
 }
 
 int vc_scale_gray_to_color_palette(IVC *src, IVC *dst) {
+    unsigned char* datasrc = (unsigned char*)src->data;
+    int bytesperline_src = src->channels * src->width;
+    int channels_src = src->channels;
+    unsigned char* datadst = (unsigned char*)dst->data;
+    int bytesperline_dst = dst->channels * dst->width;
+    int channels_dst = dst->channels;
+    int width = src->width;
+    int height = src->height;
+    int x, y;
+    long int pos_src, pos_dst;
 
+    if ((src->width <= 0) || (src->height <= 0) || (src->data == NULL)) return 0;
+    if ((src->width != dst->width) || (src->height != dst->height)) return 0;
+    if ((src->channels != 1) || (dst->channels != 3)) return 0;
+
+    for (y = 0; y < height; y++) {
+        for (x = 0; x < width; x++) {
+            pos_src = y * bytesperline_src + x * channels_src;
+            pos_dst = y * bytesperline_dst + x * channels_dst;
+
+            if (datasrc[pos_src] < 64) { // Primeiro quarteto -> cores verdes
+                datadst[pos_dst] = 0;
+                datadst[pos_dst + 1] = datasrc[pos_src] * 4;
+                datadst[pos_dst + 2] = 255;
+            } else if (datasrc[pos_src] < 128) { // Segundo quarteto -> verde a azul
+                datadst[pos_dst] = 0;
+                datadst[pos_dst + 1] = 255;
+                datadst[pos_dst + 2] = 255 - ((datasrc[pos_src] - 64) * 4);
+            } else if (datasrc[pos_src] < 192) { // Terceiro quarteto -> azul a vermelho
+                datadst[pos_dst] = (datasrc[pos_src] - 128) * 4;
+                datadst[pos_dst + 1] = 255;
+                datadst[pos_dst + 2] = 0;
+            } else { // Quarto quarteto -> vermelho para verde
+                datadst[pos_dst] = 255;
+                datadst[pos_dst + 1] = 255 - ((datasrc[pos_src] - 192) * 4);;
+                datadst[pos_dst + 2] = 0;
+            }
+        }
+    }
+
+    return 1;
+}
+
+int vc_image_white_pixel_count(IVC *src) {
+    int x, y, count = 0;
+    long int pos;
+
+    for (y = 0; y < src->height; y++) {
+        for (x = 0; x < src->width; x++) {
+            pos = y * src->bytesperline + x * src->channels;
+
+            if (src->data[pos] == 0) {
+                count++;
+            }
+        }
+    }
+
+    return count;
 }

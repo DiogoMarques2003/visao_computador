@@ -53,3 +53,5 @@ int vc_hsv_segmentation(IVC *src, IVC *dst, int hmin, int hmax, int smin,
                         int smax, int vmin, int vmax);
 
 int vc_scale_gray_to_color_palette(IVC *src, IVC *dst);
+
+int vc_image_white_pixel_count(IVC *src);
