@@ -720,7 +720,7 @@ int vc_image_white_pixel_count(IVC *src) {
         for (x = 0; x < src->width; x++) {
             pos = y * src->bytesperline + x * src->channels;
 
-            if (src->data[pos] == 0) {
+            if (src->data[pos] == 255) {
                 count++;
             }
         }
