@@ -363,8 +363,8 @@ int ex_vc4_gray_to_rgb() {
 }
 
 int ex_1() {
-    IVC *image_src, *image_hsv, *image_dst;
-    int count100, count75, count50, count25, totalPixels;
+    IVC *image_src, *image_dst;
+    float count100, count75, count50, count25, totalPixels;
 
     image_src = vc_read_image("../Images/EX1/PET-Normal.ppm");
     if (image_src == NULL) {
@@ -381,48 +381,34 @@ int ex_1() {
         return 0;
     }
 
-    image_hsv = vc_image_new(image_src->width, image_src->height, 3, 255);
-    if (image_hsv == NULL) {
-        vc_image_free(image_src);
-        vc_image_free(image_dst);
-        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
-        getchar();
-        return 0;
-    }
-
-    if (vc_rgb_to_hsv(image_src, image_hsv) == 0) {
-        vc_image_free(image_src);
-        vc_image_free(image_dst);
-        vc_image_free(image_hsv);
-        printf("ERROR -> vc_rgb_to_hsv():\n\tCan't convert the image!\n");
-        getchar();
-        return 0;
-    }
-
     // Obter cor vermelha
-    vc_hsv_segmentation(image_hsv, image_dst, 291 , 45, 50, 100, 60, 100);
+    vc_hsv_segmentation(image_src, image_dst, 291 , 45, 50, 100, 60, 100);
     count100 = vc_image_white_pixel_count(image_dst);
 
     // Obter cor amarela
-    vc_hsv_segmentation(image_hsv, image_dst, 46 , 70, 50, 100, 60, 100);
+    vc_hsv_segmentation(image_src, image_dst, 46 , 70, 50, 100, 60, 100);
     count75 = vc_image_white_pixel_count(image_dst);
 
     // Obter cor verde
-    vc_hsv_segmentation(image_hsv, image_dst, 71 , 160, 50, 100, 60, 100);
+    vc_hsv_segmentation(image_src, image_dst, 71 , 160, 50, 100, 60, 100);
     count50 = vc_image_white_pixel_count(image_dst);
 
     // Obter cor azul
-    vc_hsv_segmentation(image_hsv, image_dst, 161 , 290, 50, 100, 60, 100);
+    vc_hsv_segmentation(image_src, image_dst, 161 , 290, 50, 100, 60, 100);
     count25 = vc_image_white_pixel_count(image_dst);
 
     // Obter pixeis pretos e depois fazer o negativo deles
-    vc_hsv_segmentation(image_hsv, image_dst, 0, 360, 0, 50, 0, 30);
+    vc_hsv_segmentation(image_src, image_dst, 0, 360, 0, 50, 0, 30);
     vc_gray_negative(image_dst);
     totalPixels = vc_image_white_pixel_count(image_dst);
 
+    printf("Percentagem de atividade ate 25: %.2f\n", (count25 + (totalPixels - count100 - count75 - count50 - count25)) / totalPixels * 100);
+    printf("Percentagem de atividade ate 50: %.2f\n", count50 / totalPixels * 100);
+    printf("Percentagem de atividade ate 75: %.2f\n", count75 / totalPixels * 100);
+    printf("Percentagem de atividade ate 100: %.2f\n", count100 / totalPixels * 100);
+
     vc_image_free(image_src);
     vc_image_free(image_dst);
-    vc_image_free(image_hsv);
 
     printf("Press any key to exit...\n");
     getchar();
