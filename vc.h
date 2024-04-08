@@ -55,3 +55,9 @@ int vc_hsv_segmentation(IVC *src, IVC *dst, int hmin, int hmax, int smin,
 int vc_scale_gray_to_color_palette(IVC *src, IVC *dst);
 
 int vc_image_white_pixel_count(IVC *src);
+
+int vc_gray_to_binary(IVC *src, IVC *dst, int threshold);
+
+int vc_gray_to_binary_global_mean(IVC *src, IVC *dst);
+
+int vc_gray_to_binary_midpoint(IVC *src, IVC *dst, int kernel);

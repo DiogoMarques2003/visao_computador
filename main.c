@@ -416,6 +416,114 @@ int ex_1() {
     return 0;
 }
 
+int ex_vc5_gray_to_binary() {
+    IVC *image_src, *image_dst;
+
+    image_src = vc_read_image("../Images/Other/gray-01.pgm");
+    if (image_src == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image_dst = vc_image_new(image_src->width, image_src->height, 1, 255);
+    if (image_dst == NULL) {
+        vc_image_free(image_src);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    if (vc_gray_to_binary(image_src, image_dst, 10) != 1) {
+        vc_image_free(image_src);
+        vc_image_free(image_dst);
+        printf("ERROR -> vc_gray_to_binary():\n\tCan't convert the image!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_write_image("../output/vc5_gray_to_binary.ppm", image_dst);
+    vc_image_free(image_src);
+    vc_image_free(image_dst);
+
+    printf("Press any key to exit...\n");
+    getchar();
+
+    return 0;
+}
+
+int ex_vc5_gray_to_binary_global_mean() {
+    IVC *image_src, *image_dst;
+
+    image_src = vc_read_image("../Images/Other/gray-01.pgm");
+    if (image_src == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image_dst = vc_image_new(image_src->width, image_src->height, 1, 255);
+    if (image_dst == NULL) {
+        vc_image_free(image_src);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    if (vc_gray_to_binary_global_mean(image_src, image_dst) != 1) {
+        vc_image_free(image_src);
+        vc_image_free(image_dst);
+        printf("ERROR -> vc_gray_to_binary_global_mean():\n\tCan't convert the image!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_write_image("../output/vc5_gray_to_binary_global_mean.ppm", image_dst);
+    vc_image_free(image_src);
+    vc_image_free(image_dst);
+
+    printf("Press any key to exit...\n");
+    getchar();
+
+    return 0;
+}
+
+int ex_vc5_gray_to_binary_midpoint() {
+    IVC *image_src, *image_dst;
+
+    image_src = vc_read_image("../Images/Other/gray-01.pgm");
+    if (image_src == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image_dst = vc_image_new(image_src->width, image_src->height, 1, 255);
+    if (image_dst == NULL) {
+        vc_image_free(image_src);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    if (vc_gray_to_binary_midpoint(image_src, image_dst, 25) != 1) {
+        vc_image_free(image_src);
+        vc_image_free(image_dst);
+        printf("ERROR -> vc_gray_to_binary_midpoint():\n\tCan't convert the image!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_write_image("../output/vc5_gray_to_binary_midpoint.ppm", image_dst);
+    vc_image_free(image_src);
+    vc_image_free(image_dst);
+
+    printf("Press any key to exit...\n");
+    getchar();
+
+    return 0;
+}
+
 int main() {
     //ex_vc3_1();
     //ex_vc3_2();
@@ -434,5 +542,9 @@ int main() {
 
     //ex_vc4_gray_to_rgb();
 
-    ex_1();
+    //ex_1();
+
+    ex_vc5_gray_to_binary();
+    ex_vc5_gray_to_binary_global_mean();
+    ex_vc5_gray_to_binary_midpoint();
 }

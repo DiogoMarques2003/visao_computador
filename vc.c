@@ -728,3 +728,144 @@ int vc_image_white_pixel_count(IVC *src) {
 
     return count;
 }
+
+int vc_gray_to_binary(IVC *src, IVC *dst, int threshold) {
+    unsigned char* datasrc = (unsigned char*)src->data;
+    int bytesperline_src = src->channels * src->width;
+    int channels_src = src->channels;
+    unsigned char* datadst = (unsigned char*)dst->data;
+    int bytesperline_dst = dst->channels * dst->width;
+    int channels_dst = dst->channels;
+    int width = src->width;
+    int height = src->height;
+    int x, y;
+    long int pos_src, pos_dst;
+
+    if ((src->width <= 0) || (src->height <= 0) || (src->data == NULL)) return 0;
+    if ((src->width != dst->width) || (src->height != dst->height)) return 0;
+    if ((src->channels != 1) || (dst->channels != 1)) return 0;
+
+    for (y = 0; y < height; y++)
+    {
+        for (x = 0; x < width; x++)
+        {
+            pos_src = y*bytesperline_src + x*channels_src;
+            pos_dst = y*bytesperline_dst + x*channels_dst;
+
+            if (datasrc[pos_src] > threshold) {
+                datadst[pos_dst] = 255;
+            } else {
+                datadst[pos_dst] = 0;
+            }
+
+        }
+    }
+
+    return 1;
+}
+
+int vc_gray_to_binary_global_mean(IVC *src, IVC *dst) {
+    unsigned char* datasrc = (unsigned char*)src->data;
+    int bytesperline_src = src->channels * src->width;
+    int channels_src = src->channels;
+    unsigned char* datadst = (unsigned char*)dst->data;
+    int bytesperline_dst = dst->channels * dst->width;
+    int channels_dst = dst->channels;
+    int width = src->width;
+    int height = src->height;
+    int x, y;
+    long int pos_src, pos_dst;
+    int total=0;
+    float threshold;
+
+    if ((src->width <= 0) || (src->height <= 0) || (src->data == NULL)) return 0;
+    if ((src->width != dst->width) || (src->height != dst->height)) return 0;
+    if ((src->channels != 1) || (dst->channels != 1)) return 0;
+
+    for (y = 0; y < height; y++)
+    {
+        for (x = 0; x < width; x++)
+        {
+            pos_src = y*bytesperline_src + x*channels_src;
+
+            total += datasrc[pos_src];
+        }
+    }
+
+    threshold = (float)total/(width*height);
+
+    for (y = 0; y < height; y++)
+    {
+        for (x = 0; x < width; x++)
+        {
+            pos_src = y*bytesperline_src + x*channels_src;
+            pos_dst = y*bytesperline_dst + x*channels_dst;
+
+            if (datasrc[pos_src] > threshold) {
+                datadst[pos_dst] = 255;
+            }
+            else
+            {
+                datadst[pos_dst] = 0;
+            }
+
+        }
+    }
+
+    return 1;
+}
+
+int vc_gray_to_binary_midpoint(IVC *src, IVC *dst, int kernel) {
+    unsigned char* datasrc = (unsigned char*)src->data;
+    int bytesperline_src = src->channels * src->width;
+    int channels_src = src->channels;
+    unsigned char* datadst = (unsigned char*)dst->data;
+    int bytesperline_dst = dst->channels * dst->width;
+    int channels_dst = dst->channels;
+    int width = src->width;
+    int height = src->height;
+    int x, y, vY, vX;
+    long int pos_src, pos_dst;
+    float threshold;
+    float vMax = 0, vMin = 256;
+
+    //Percorre uma imagem
+    for (y = 0; y < height; y++) {
+        for (x = 0; x < width; x++) {
+            pos_src = y * bytesperline_src + x * channels_src;
+            pos_dst = y * bytesperline_dst + x * channels_dst;
+
+            vY = kernel / 2;
+            vX = kernel / 2;
+
+            int xx, yy;
+
+            for (vMax = 0, vMin = 255, yy = y - vY; yy <= y + vY; yy++) {
+                for (xx = x - vX ; xx <= x + vX; xx++) {
+                    if(yy >= 0 && yy < height && xx >=0 && xx < width) {
+                        pos_src = yy * bytesperline_src + xx * channels_src;
+
+                        if (datasrc[pos_src] > vMax) {
+                            vMax = datasrc[pos_src];
+                        }
+
+                        if (datasrc[pos_src] < vMin)
+                        {
+                            vMin = datasrc[pos_src];
+                        }
+                    }
+                }
+            }
+
+            threshold = (vMin + vMax) / 2;
+
+            if (datasrc[pos_src] > threshold) {
+                datadst[pos_dst] = 255;
+            } else {
+                datadst[pos_dst] = 0;
+            }
+        }
+    }
+
+    return 1;
+}
