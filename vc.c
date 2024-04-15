@@ -938,7 +938,7 @@ int vc_gray_to_binary_niblac(IVC *src, IVC *dst, int kernel, float k) {
     return 1;
 }
 
-int vc_binary_dilate(IVC *src, IVC *dst, int kernel) {
+int vc_binary_dilate(IVC *src, IVC *dst, int kernel){
     unsigned char *datasrc = (unsigned char *)src->data;
     unsigned char *datadst = (unsigned char *)dst->data;
     int width = src->width;
@@ -960,12 +960,11 @@ int vc_binary_dilate(IVC *src, IVC *dst, int kernel) {
     s2 = (kernel - 1) / 2;
     s1 = -(s2);
 
-    //Copiar os dados do datasrc para o datadst
     memcpy(datadst, datasrc, bytesperline * height);
 
     // Cálculo da dilatacao
-    for (y = 0; y < height; y++) {
-        for (x = 0; x < width; x++) {
+    for (y = 0; y<height; y++) {
+        for (x = 0; x<width; x++) {
             pos = y * bytesperline + x * channels;
 
             pixel = datasrc[pos];
@@ -993,5 +992,94 @@ int vc_binary_dilate(IVC *src, IVC *dst, int kernel) {
             if (pixel == 255) datadst[pos] = 255;
         }
     }
+    return 1;
+}
+// Erosão binária
+int vc_binary_erode(IVC *src, IVC *dst, int kernel)
+{
+    unsigned char *datasrc = (unsigned char *)src->data;
+    unsigned char *datadst = (unsigned char *)dst->data;
+    int width = src->width;
+    int height = src->height;
+    int bytesperline = src->bytesperline;
+    int channels = src->channels;
+    int x, y;
+    int xk, yk;
+    int i, j;
+    long int pos, posk;
+    int s1, s2;
+    unsigned char pixel;
+
+    // Verificação de erros
+    if ((src->width <= 0) || (src->height <= 0) || (src->data == NULL)) return 0;
+    if ((src->width != dst->width) || (src->height != dst->height) || (src->channels != dst->channels)) return 0;
+    if (channels != 1) return 0;
+
+    s2 = (kernel - 1) / 2;
+    s1 = -(s2);
+
+    memcpy(datadst, datasrc, bytesperline * height);
+
+    // Cálculo da erosão
+    for (y = 0; y<height; y++) {
+        for (x = 0; x<width; x++) {
+            pos = y * bytesperline + x * channels;
+
+            pixel = datasrc[pos];
+
+            for (yk = s1; yk <= s2; yk++) {
+                j = y + yk;
+
+                if ((j < 0) || (j >= height)) continue;
+
+                for (xk = s1; xk <= s2; xk++) {
+                    i = x + xk;
+
+                    if ((i < 0) || (i >= width)) continue;
+
+                    posk = j * bytesperline + i * channels;
+                    //aqui a unica diference entre erode ou dilate
+                    //se encontrar um pixel a branco mete o pixel central a branco
+
+                    pixel &= datasrc[posk];
+                }
+            }
+
+            // Se um qualquer pixel da vizinhança, na imagem de origem, for de plano de fundo, então o pixel central
+            // na imagem de destino é também definido como plano de fundo.
+            if (pixel == 0) datadst[pos] = 0;
+        }
+    }
+
+
+    return 1;
+}
+
+//serve para fazer contornos ( erodir a imagem para depois contornar para simplificar a imagem )
+int vc_binary_open(IVC *src, IVC *dst, int kernelErode, int kernelDilate){
+
+    IVC *temp;
+    temp = vc_image_new(src->width,src->height,1,255);
+
+    vc_binary_erode(src,temp,kernelErode);
+
+    vc_binary_dilate(temp,dst,kernelDilate);
+
+    vc_image_free(temp);
+
+    return 1;
+}
+
+int vc_binary_close(IVC *src, IVC *dst, int kernelErode, int kernelDilate){
+
+    IVC *temp;
+    temp = vc_image_new(src->width,src->height,1,255);
+
+    vc_binary_dilate(src,temp,kernelDilate);
+
+    vc_binary_erode(temp,dst,kernelErode);
+
+    vc_image_free(temp);
+
     return 1;
 }

@@ -615,6 +615,87 @@ int ex_vc5_binary_dilate() {
     return 0;
 }
 
+int ex_2() {
+    IVC *image_src, *image_gray, *image_cranio, *image_brain, *image_brain2;
+
+    image_src = vc_read_image("../Images/EX2/brain.pgm");
+    if (image_src == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image_gray = vc_image_new(image_src->width, image_src->height, 1, 255);
+    if (image_gray == NULL) {
+        vc_image_free(image_src);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    image_cranio = vc_image_new(image_src->width, image_src->height, 1, 255);
+    if (image_cranio == NULL) {
+        vc_image_free(image_src);
+        vc_image_free(image_gray);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    image_brain = vc_image_new(image_src->width, image_src->height, 1, 255);
+    if (image_brain == NULL) {
+        vc_image_free(image_src);
+        vc_image_free(image_gray);
+        vc_image_free(image_cranio);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    image_brain2 = vc_image_new(image_src->width, image_src->height, 1, 255);
+    if (image_brain2 == NULL) {
+        vc_image_free(image_src);
+        vc_image_free(image_gray);
+        vc_image_free(image_cranio);
+        vc_image_free(image_brain);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_gray_to_binary(image_src, image_gray, 205);
+    vc_binary_dilate(image_gray, image_cranio, 5);
+
+    vc_gray_to_binary(image_src, image_gray, 60);
+    vc_binary_erode(image_gray, image_brain, 5);
+
+    for (int i = 0; i < image_cranio->height * image_cranio->width; i++) {
+        if (image_cranio->data[i] == 255) {
+            image_brain->data[i] = 0;
+        }
+    }
+
+    vc_binary_open(image_brain, image_brain2, 5, 13);
+
+    for (int i = 0; i < image_brain2->height * image_brain2->width; i++) {
+        if (image_brain2->data[i] != 255) {
+            image_src->data[i] = 0;
+        }
+    }
+
+    vc_write_image("../output/brain.pgm", image_src);
+    vc_image_free(image_src);
+    vc_image_free(image_gray);
+    vc_image_free(image_cranio);
+    vc_image_free(image_brain);
+    vc_image_free(image_brain2);
+
+    printf("Press any key to exit...\n");
+    getchar();
+
+    return 0;
+}
+
 int main() {
     //ex_vc3_1();
     //ex_vc3_2();
@@ -639,6 +720,8 @@ int main() {
     //ex_vc5_gray_to_binary_global_mean();
     //ex_vc5_gray_to_binary_midpoint();
 
-    ex_vc5_gray_to_binary_niblac();
-    ex_vc5_binary_dilate();
+    //ex_vc5_gray_to_binary_niblac();
+    //ex_vc5_binary_dilate();
+
+    ex_2();
 }

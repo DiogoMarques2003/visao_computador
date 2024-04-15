@@ -64,4 +64,10 @@ int vc_gray_to_binary_midpoint(IVC *src, IVC *dst, int kernel);
 
 int vc_gray_to_binary_niblac(IVC *src, IVC *dst, int kernel, float k);
 
+int vc_binary_erode(IVC *src, IVC *dst, int kernel);
+
 int vc_binary_dilate(IVC *src, IVC *dst, int kernel);
+
+int vc_binary_open(IVC *src, IVC *dst, int kernelErode, int kernelDilate);
+
+int vc_binary_close(IVC *src, IVC *dst, int kernelErode, int kernelDilate);
