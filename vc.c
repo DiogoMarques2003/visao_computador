@@ -829,6 +829,11 @@ int vc_gray_to_binary_midpoint(IVC *src, IVC *dst, int kernel) {
     float threshold;
     float vMax = 0, vMin = 256;
 
+    // Verificação de erros
+    if ((src->width <= 0) || (src->height <= 0) || (src->data == NULL)) return 0;
+    if ((src->width != dst->width) || (src->height != dst->height)) return 0;
+    if ((src->channels != 1) || (dst->channels != 1)) return 0;
+
     //Percorre uma imagem
     for (y = 0; y < height; y++) {
         for (x = 0; x < width; x++) {
@@ -867,5 +872,126 @@ int vc_gray_to_binary_midpoint(IVC *src, IVC *dst, int kernel) {
         }
     }
 
+    return 1;
+}
+
+int vc_gray_to_binary_niblac(IVC *src, IVC *dst, int kernel, float k) {
+    unsigned char* datasrc = (unsigned char*)src->data;
+    int bytesperline_src = src->channels * src->width;
+    int channels_src = src->channels;
+    unsigned char* datadst = (unsigned char*)dst->data;
+    int width = src->width;
+    int height = src->height;
+    int x, y, vY, vX, counter;
+    long int pos, pos_v;
+    unsigned char threshold;
+    int offset = (kernel - 1) / 2;
+
+    // Verificação de erros
+    if ((src->width <= 0) || (src->height <= 0) || (src->data == NULL)) return 0;
+    if ((src->width != dst->width) || (src->height != dst->height)) return 0;
+    if ((src->channels != 1) || (dst->channels != 1)) return 0;
+
+    for (y = 0; y < height; y++) {
+        for (x = 0; x < width; x++) {
+            pos = y * bytesperline_src + x * channels_src;
+
+            float mean = 0.0f;
+
+            //Vizinhos
+            for (counter = 0, vY = -offset; vY <= offset; vY++) {
+                for (vX = -offset; vX <= offset; vX++) {
+                    if ((y + vY > 0) && (y + vY < height) && (x + vX > 0) && (x + vX < width)) {
+                        pos_v = (y + vY) * bytesperline_src + (x + vX) * channels_src;
+
+                        mean += (float) datasrc[pos_v];
+
+                        counter++;
+                    }
+                }
+            }
+            mean /= counter;
+
+            float sdeviation = 0.0f;
+
+            //Vizinhos
+            for (counter = 0, vY = -offset; vY <= offset; vY++) {
+                for (vX = -offset; vX <= offset; vX++) {
+                    if ((y + vY > 0) && (y + vY < height) && (x + vX > 0) && (x + vX < width)) {
+                        pos_v = (y + vY) * bytesperline_src + (x + vX) * channels_src;
+
+                        sdeviation += powf(((float)datasrc[pos_v]) - mean, 2);
+
+                        counter++;
+                    }
+                }
+            }
+            sdeviation = sqrt(sdeviation / counter);
+
+            threshold = mean + k * sdeviation;
+
+            if (datasrc[pos] > threshold) datadst[pos] = 255;
+            else datadst[pos] = 0;
+        }
+    }
+
+    return 1;
+}
+
+int vc_binary_dilate(IVC *src, IVC *dst, int kernel) {
+    unsigned char *datasrc = (unsigned char *)src->data;
+    unsigned char *datadst = (unsigned char *)dst->data;
+    int width = src->width;
+    int height = src->height;
+    int bytesperline = src->bytesperline;
+    int channels = src->channels;
+    int x, y;
+    int xk, yk;
+    int i, j;
+    long int pos, posk;
+    int s1, s2;
+    unsigned char pixel;
+
+    // Verificação de erros
+    if ((src->width <= 0) || (src->height <= 0) || (src->data == NULL)) return 0;
+    if ((src->width != dst->width) || (src->height != dst->height) || (src->channels != dst->channels)) return 0;
+    if (channels != 1) return 0;
+
+    s2 = (kernel - 1) / 2;
+    s1 = -(s2);
+
+    //Copiar os dados do datasrc para o datadst
+    memcpy(datadst, datasrc, bytesperline * height);
+
+    // Cálculo da dilatacao
+    for (y = 0; y < height; y++) {
+        for (x = 0; x < width; x++) {
+            pos = y * bytesperline + x * channels;
+
+            pixel = datasrc[pos];
+
+            for (yk = s1; yk <= s2; yk++) {
+                j = y + yk;
+
+                if ((j < 0) || (j >= height)) continue;
+
+                for (xk = s1; xk <= s2; xk++) {
+                    i = x + xk;
+
+                    if ((i < 0) || (i >= width)) continue;
+
+                    posk = j * bytesperline + i * channels;
+                    //aqui a unica diference entre erode ou dilate
+                    //se encontrar um pixel a branco mete o pixel central a branco
+
+                    pixel |= datasrc[posk];
+                }
+            }
+
+            // Se um qualquer pixel da vizinhança, na imagem de origem, for de plano de fundo, então o pixel central
+            // na imagem de destino é também definido como plano de fundo.
+            if (pixel == 255) datadst[pos] = 255;
+        }
+    }
     return 1;
 }

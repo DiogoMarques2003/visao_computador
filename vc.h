@@ -61,3 +61,7 @@ int vc_gray_to_binary(IVC *src, IVC *dst, int threshold);
 int vc_gray_to_binary_global_mean(IVC *src, IVC *dst);
 
 int vc_gray_to_binary_midpoint(IVC *src, IVC *dst, int kernel);
+
+int vc_gray_to_binary_niblac(IVC *src, IVC *dst, int kernel, float k);
+
+int vc_binary_dilate(IVC *src, IVC *dst, int kernel);

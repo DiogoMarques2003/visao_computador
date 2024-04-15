@@ -524,6 +524,97 @@ int ex_vc5_gray_to_binary_midpoint() {
     return 0;
 }
 
+int ex_vc5_gray_to_binary_niblac() {
+    IVC *image_src, *image_dst;
+
+    image_src = vc_read_image("../Images/Other/gray-01.pgm");
+    if (image_src == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image_dst = vc_image_new(image_src->width, image_src->height, 1, 255);
+    if (image_dst == NULL) {
+        vc_image_free(image_src);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    if (vc_gray_to_binary_niblac(image_src, image_dst, 25, -0.2) != 1) {
+        vc_image_free(image_src);
+        vc_image_free(image_dst);
+        printf("ERROR -> vc_gray_to_binary_niblac():\n\tCan't convert the image!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_write_image("../output/vc5_gray_to_binary_niblac.ppm", image_dst);
+    vc_image_free(image_src);
+    vc_image_free(image_dst);
+
+    printf("Press any key to exit...\n");
+    getchar();
+
+    return 0;
+}
+
+int ex_vc5_binary_dilate() {
+    IVC *image_src, *image_gray, *image_dst;
+
+    image_src = vc_read_image("../Images/operadores_morfologicos/flir-01.pgm");
+    if (image_src == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image_gray = vc_image_new(image_src->width, image_src->height, 1, 255);
+    if (image_gray == NULL) {
+        vc_image_free(image_src);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    if (vc_gray_to_binary(image_src, image_gray, 210) != 1) {
+        vc_image_free(image_src);
+        vc_image_free(image_gray);
+        printf("ERROR -> vc_gray_to_binary():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    image_dst = vc_image_new(image_src->width, image_src->height, 1, 255);
+    if (image_dst == NULL) {
+        vc_image_free(image_src);
+        vc_image_free(image_gray);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    if (vc_binary_dilate(image_gray, image_dst, 7) != 1) {
+        vc_image_free(image_src);
+        vc_image_free(image_gray);
+        vc_image_free(image_dst);
+        printf("ERROR -> vc_binary_dilate():\n\tCan't convert the image!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_write_image("../output/vc5_binary_dilate.pgm", image_dst);
+    vc_image_free(image_src);
+    vc_image_free(image_gray);
+    vc_image_free(image_dst);
+
+    printf("Press any key to exit...\n");
+    getchar();
+
+    return 0;
+}
+
 int main() {
     //ex_vc3_1();
     //ex_vc3_2();
@@ -544,7 +635,10 @@ int main() {
 
     //ex_1();
 
-    ex_vc5_gray_to_binary();
-    ex_vc5_gray_to_binary_global_mean();
-    ex_vc5_gray_to_binary_midpoint();
+    //ex_vc5_gray_to_binary();
+    //ex_vc5_gray_to_binary_global_mean();
+    //ex_vc5_gray_to_binary_midpoint();
+
+    ex_vc5_gray_to_binary_niblac();
+    ex_vc5_binary_dilate();
 }
