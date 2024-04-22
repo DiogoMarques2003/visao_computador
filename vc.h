@@ -15,7 +15,6 @@
 //                   ESTRUTURA DE UMA IMAGEM
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-
 typedef struct {
 	unsigned char *data;
 	int width, height;
@@ -24,6 +23,32 @@ typedef struct {
 	int bytesperline;		// widchth * channels
 } IVC;
 
+// Estrutura do BLOB
+typedef struct {
+    int x, y, width, height; // Caixa delimitadora (Bounding Box)
+    int area;                // Área
+    int xc, yc;              // Centro-de-massa
+    int perimeter;           // Perimetro
+    int label;               // Etiqueta
+
+    unsigned char *mask;     // Não usado
+    unsigned char *data;     // Não usado
+    int channels;            // Não usado
+    int levels;              // Não usado
+} OVC;
+
+typedef struct {
+    unsigned char red;
+    unsigned char green;
+    unsigned char blue;
+} RGB;
+
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//                    Macros
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+#define MAX(a, b) (a > b ? a : b)
+#define MIN(a, b) (a < b ? a : b)
 
 //++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 //                    PROTOTIPOS DE FUNÇÕES
@@ -71,3 +96,10 @@ int vc_binary_dilate(IVC *src, IVC *dst, int kernel);
 int vc_binary_open(IVC *src, IVC *dst, int kernelErode, int kernelDilate);
 
 int vc_binary_close(IVC *src, IVC *dst, int kernelErode, int kernelDilate);
+
+OVC* vc_binary_blob_labelling(IVC *src, IVC *dst, int *nlabels);
+
+int vc_binary_blob_info(IVC *src, OVC *blobs, int nblobs);
+
+int vc_blob_to_gray_scale(IVC *src, IVC *dst, int nlabels);
+int vc_blob_to_gray_rgb(IVC *src, IVC *dst, int nlabels);

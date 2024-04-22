@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <malloc.h>
 #include "vc.h"
 
 int ex_vc3_1() {
@@ -696,6 +697,69 @@ int ex_2() {
     return 0;
 }
 
+int ex_vc7_labeling() {
+    IVC *image[4];
+    int i;
+
+    image[0] = vc_read_image("../Images/Labelling/labelling-2.pgm");
+    if (image[0] == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image[1] = vc_image_new(image[0]->width, image[0]->height, 1, 255);
+    if (image[1] == NULL) {
+        vc_image_free(image[0]);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    int nblobs;
+    OVC *blobs;
+    blobs = vc_binary_blob_labelling(image[0], image[1], &nblobs);
+
+    if (blobs != NULL) {
+        printf("\nNumber of labels: %d\n", nblobs);
+        for (i = 0; i<nblobs; i++) {
+            printf("-> Label %d\n", blobs[i].label);
+        }
+
+        free(blobs);
+    }
+
+    image[2] = vc_image_new(image[0]->width, image[0]->height, 1, 255);
+    if (image[2] == NULL) {
+        vc_image_free(image[0]);
+        vc_image_free(image[1]);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+    image[3] = vc_image_new(image[0]->width, image[0]->height, 3, 255);
+    if (image[2] == NULL) {
+        vc_image_free(image[0]);
+        vc_image_free(image[1]);
+        vc_image_free(image[2]);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_blob_to_gray_scale(image[1], image[2], nblobs);
+    vc_blob_to_gray_rgb(image[1], image[3], nblobs);
+
+    vc_write_image("../output/vc7_labeling.pgm", image[1]);
+    vc_write_image("../output/vc7_labeling_gray.pgm", image[2]);
+    vc_write_image("../output/vc7_labeling_rgb.ppm", image[3]);
+
+    vc_image_free(image[0]);
+    vc_image_free(image[1]);
+
+    return 0;
+}
+
 int main() {
     //ex_vc3_1();
     //ex_vc3_2();
@@ -723,5 +787,7 @@ int main() {
     //ex_vc5_gray_to_binary_niblac();
     //ex_vc5_binary_dilate();
 
-    ex_2();
+    //ex_2();
+
+    ex_vc7_labeling();
 }
