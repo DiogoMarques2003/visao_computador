@@ -103,3 +103,6 @@ int vc_binary_blob_info(IVC *src, OVC *blobs, int nblobs);
 
 int vc_blob_to_gray_scale(IVC *src, IVC *dst, int nlabels);
 int vc_blob_to_gray_rgb(IVC *src, IVC *dst, int nlabels);
+
+int vc_draw_center_of_gravity(IVC *img, OVC *blob, int comp);
+int vc_draw_bounding_box(IVC *img, OVC *blob);

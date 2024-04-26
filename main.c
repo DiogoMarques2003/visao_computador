@@ -738,7 +738,7 @@ int ex_vc7_labeling() {
         return 0;
     }
     image[3] = vc_image_new(image[0]->width, image[0]->height, 3, 255);
-    if (image[2] == NULL) {
+    if (image[3] == NULL) {
         vc_image_free(image[0]);
         vc_image_free(image[1]);
         vc_image_free(image[2]);
@@ -756,8 +756,76 @@ int ex_vc7_labeling() {
 
     vc_image_free(image[0]);
     vc_image_free(image[1]);
+    vc_image_free(image[2]);
+    vc_image_free(image[3]);
 
     return 0;
+}
+
+int ex_vc7_labelling2() {
+    IVC *image[4];
+
+    image[0] = vc_read_image("../Images/Labelling2/input.ppm");
+    if (image[0] == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image[1] = vc_image_new(image[0]->width, image[0]->height, 1, 255);
+    if (image[1] == NULL) {
+        vc_image_free(image[0]);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    image[2] = vc_image_new(image[0]->width, image[0]->height, 1, 255);
+    if (image[2] == NULL) {
+        vc_image_free(image[0]);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    image[3] = vc_image_new(image[0]->width, image[0]->height, 1, 255);
+    if (image[3] == NULL) {
+        vc_image_free(image[0]);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    //Obter apenas bonecos azuis
+    vc_hsv_segmentation(image[0], image[1], 190, 250, 50, 100, 30, 100);
+
+    //Dilatar a imagem para juntar a cabeça ao corpo
+    vc_binary_dilate(image[1], image[2], 3);
+
+    //Obter os blobs da imagem (o lugar de cada boneco)
+    int nblobs;
+    OVC *blobs;
+    blobs = vc_binary_blob_labelling(image[2], image[3], &nblobs);
+
+    if (blobs != NULL) {
+        printf("\nNumber of labels: %d\n", nblobs);
+
+        //Obter as informações do blob
+        vc_binary_blob_info(image[3], blobs, nblobs);
+
+        for (int i = 0; i < nblobs; i++) {
+            vc_draw_center_of_gravity(image[1], &blobs[i], 5);
+            vc_draw_bounding_box(image[1], &blobs[i]);
+        }
+
+        free(blobs);
+    }
+
+    vc_write_image("../output/vc7_labeling2.ppm", image[1]);
+    vc_image_free(image[0]);
+    vc_image_free(image[1]);
+    vc_image_free(image[2]);
+    vc_image_free(image[3]);
 }
 
 int main() {
@@ -789,5 +857,7 @@ int main() {
 
     //ex_2();
 
-    ex_vc7_labeling();
+    //ex_vc7_labeling();
+
+    ex_vc7_labelling2();
 }
