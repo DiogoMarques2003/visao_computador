@@ -1444,3 +1444,104 @@ int vc_draw_bounding_box(IVC *img, OVC *blob) {
 
     return 0;
 }
+
+int vc_gray_histogram_show(IVC *src, IVC *dst) {
+    unsigned char* datasrc = (unsigned char*)src->data;
+    unsigned char* datadst = (unsigned char*)dst->data;
+    int x, y;
+    int ni[256] = { 0 }; // contador para cada pixel
+    float pdf[256]; // Função de probabilidade da densidade
+    float pdfnorm[256]; // Nomarlização
+    float pdfmax = 0; // Valor do pixel mais alto
+    int n = src->width * src->height; // Número de pixéis na imagem
+
+    if ((src->width <= 0) || (src->height <= 0) || (src->data == NULL)) return 0;
+    if (dst->width != 256 && dst->height != 256) return 0;
+    if ((src->channels != 1) || (dst->channels != 1)) return 0;
+
+    // 1º - Contar o brilho dos pixéis
+    for (int i = 0; i < n; ni[datasrc[i++]]++);
+
+    // 2º - Calcular a densidade
+    for (int i = 0; i < 256; i++) {
+        pdf[i] = (float)ni[i] / n;
+    }
+
+    // 3º - Encontrar o pixel com valor maior
+    for (int i = 0; i < 256; i++) {
+        if (pdf[i] > pdfmax) {
+            pdfmax = pdf[i];
+        }
+    }
+
+    // 4º - Normalização
+    for (int i = 0; i < 256; i++) {
+        pdfnorm[i] = pdf[i] / pdfmax;
+    }
+
+    // 5º - Gerar o histograma
+    //Limpar a imagem para garantir que fica apenas com o histograma
+    memset(datadst, 0, 256 * 256 * sizeof(unsigned char));
+
+    //Desenhar
+    for (x = 0; x < 256; x++) {
+        for (y = 256 - 1; y >= (256 - 1) - pdfnorm[x] * 255; y--) {
+            datadst[y * 256 + x] = 255;
+        }
+    }
+
+    return 0;
+}
+
+int vc_gray_histogram_equalization(IVC *src, IVC *dst) {
+    unsigned char *datasrc = (unsigned char*)src->data;
+    int bytesperline_src = src->width*src->channels;
+    int channels_src = src->channels;
+    unsigned char *datadst = (unsigned char*)dst->data;
+    int width = src->width;
+    int height = src->height;
+    int x ,y;
+    long int pos_dst;
+    int n[256] = {0};
+    float pdf[256] = { 0 }, cdf[256] = { 0 };
+    float size = width * height;
+    float min = 0;
+
+    if ((src->width <= 0) || (src->height <= 0) || (src->data == NULL)) return 0;
+    if (dst->width != src->width && dst->height != src->height) return 0;
+    if ((src->channels != 1) || (dst->channels != 1)) return 0;
+
+    for(x=0; x<height*width ; x++) {
+        n[datasrc[x]]++;
+    }
+
+    //calcular pdf
+    for (x = 0; x <= 255; x++) {
+        pdf[x] = (((float)n[x]) / size);
+    }
+
+    //calcular cdf
+    for(y = 0; y <= 255; y++) {
+        if(y == 0) {
+            cdf[y] = pdf[y];
+        } else {
+            cdf[y]= cdf[y - 1]+ pdf[y];
+        }
+    }
+
+    for(x = 0; x <= 255; x++) {
+        if (cdf[x] != 0) {
+            min = pdf[x];
+            break;
+        }
+    }
+
+    for (y = 0; y < height; y++) {
+        for (x = 0; x < width; x++) {
+            pos_dst = y * bytesperline_src + x * channels_src;
+            datadst[pos_dst] = (cdf[datasrc[pos_dst]] - min) / (1.0 - min) * (256-1);
+        }
+    }
+
+    return 0;
+}

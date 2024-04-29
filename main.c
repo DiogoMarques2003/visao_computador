@@ -830,6 +830,72 @@ int ex_vc7_labelling2() {
     return 0;
 }
 
+int ex_vc8_histogram_show() {
+    IVC *image[2];
+
+    image[0] = vc_read_image("../Images/Histograma/barbara.pgm");
+    if (image[0] == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image[1] = vc_image_new(256, 256, 1, 255);
+    if (image[1] == NULL) {
+        vc_image_free(image[0]);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_gray_histogram_show(image[0], image[1]);
+
+    vc_write_image("../output/vc8_histogram_show.ppm", image[1]);
+    vc_image_free(image[0]);
+    vc_image_free(image[1]);
+
+    return 0;
+}
+
+int ex_vc8_gray_histogram_equalization() {
+    IVC *image[3];
+
+    image[0] = vc_read_image("../Images/Histograma/barbara.pgm");
+    if (image[0] == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image[1] = vc_image_new(image[0]->width, image[0]->height, 1, 255);
+    if (image[1] == NULL) {
+        vc_image_free(image[0]);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    image[2] = vc_image_new(256, 256, 1, 255);
+    if (image[2] == NULL) {
+        vc_image_free(image[0]);
+        vc_image_free(image[1]);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_gray_histogram_equalization(image[0], image[1]);
+    vc_gray_histogram_show(image[1], image[2]);
+
+    vc_write_image("../output/vc8_gray_histogram_equalization.ppm", image[1]);
+    vc_write_image("../output/vc8_gray_histogram_equalization_histo.ppm", image[2]);
+    vc_image_free(image[0]);
+    vc_image_free(image[1]);
+    vc_image_free(image[2]);
+
+    return 0;
+}
+
 int main() {
     //ex_vc3_1();
     //ex_vc3_2();
@@ -861,5 +927,9 @@ int main() {
 
     //ex_vc7_labeling();
 
-    ex_vc7_labelling2();
+    //ex_vc7_labelling2();
+
+    ex_vc8_histogram_show();
+
+    ex_vc8_gray_histogram_equalization();
 }

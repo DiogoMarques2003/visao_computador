@@ -106,3 +106,6 @@ int vc_blob_to_gray_rgb(IVC *src, IVC *dst, int nlabels);
 
 int vc_draw_center_of_gravity(IVC *img, OVC *blob, int comp);
 int vc_draw_bounding_box(IVC *img, OVC *blob);
+
+int vc_gray_histogram_show(IVC *src, IVC *dst);
+int vc_gray_histogram_equalization(IVC *src, IVC *dst);
