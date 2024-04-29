@@ -826,6 +826,8 @@ int ex_vc7_labelling2() {
     vc_image_free(image[1]);
     vc_image_free(image[2]);
     vc_image_free(image[3]);
+
+    return 0;
 }
 
 int main() {
