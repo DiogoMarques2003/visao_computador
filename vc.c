@@ -1442,7 +1442,7 @@ int vc_draw_bounding_box(IVC *img, OVC *blob) {
         }
     }
 
-    return 0;
+    return 1;
 }
 
 int vc_gray_histogram_show(IVC *src, IVC *dst) {
@@ -1490,7 +1490,7 @@ int vc_gray_histogram_show(IVC *src, IVC *dst) {
         }
     }
 
-    return 0;
+    return 1;
 }
 
 int vc_gray_histogram_equalization(IVC *src, IVC *dst) {
@@ -1543,5 +1543,320 @@ int vc_gray_histogram_equalization(IVC *src, IVC *dst) {
         }
     }
 
+    return 1;
+}
+
+int vc_gray_edge_prewitt(IVC *src, IVC *dst, float th) {
+    unsigned char *datasrc = (unsigned char *)src->data;
+    unsigned char *datadst = (unsigned char *)dst->data;
+    int width = src->width;
+    int height = src->height;
+    int bytesperline = src->bytesperline;
+    int channels = src->channels;
+    int x, y;
+    long int posX, posA, posB, posC, posD, posE, posF, posG, posH;
+    int i, size;
+    float histmax;
+    int histthreshold;
+    int sumx, sumy;
+    float hist[256] = { 0.0f };
+
+    // Verificação de erros
+    if ((src->width <= 0) || (src->height <= 0) || (src->data == NULL)) return 0;
+    if ((src->width != dst->width) || (src->height != dst->height) || (src->channels != dst->channels)) return 0;
+    if (channels != 1) return 0;
+
+    size = width * height;
+
+    for (y = 1; y<height - 1; y++) {
+        for (x = 1; x<width - 1; x++) {
+            posA = (y - 1) * bytesperline + (x - 1) * channels;
+            posB = (y - 1) * bytesperline + x * channels;
+            posC = (y - 1) * bytesperline + (x + 1) * channels;
+            posD = y * bytesperline + (x - 1) * channels;
+            posX = y * bytesperline + x * channels;
+            posE = y * bytesperline + (x + 1) * channels;
+            posF = (y + 1) * bytesperline + (x - 1) * channels;
+            posG = (y + 1) * bytesperline + x * channels;
+            posH = (y + 1) * bytesperline + (x + 1) * channels;
+
+            sumx = datasrc[posA] * -1;
+            sumx += datasrc[posD] * -1;
+            sumx += datasrc[posF] * -1;
+
+            sumx += datasrc[posC] * +1;
+            sumx += datasrc[posE] * +1;
+            sumx += datasrc[posH] * +1;
+            sumx = sumx / 3; // 3 = 1 + 1 + 1
+
+            sumy = datasrc[posA] * -1;
+            sumy += datasrc[posB] * -1;
+            sumy += datasrc[posC] * -1;
+
+            sumy += datasrc[posF] * +1;
+            sumy += datasrc[posG] * +1;
+            sumy += datasrc[posH] * +1;
+            sumy = sumy / 3; // 3 = 1 + 1 + 1
+
+            datadst[posX] = (unsigned char) (sqrt((double) (sumx*sumx + sumy*sumy)) / sqrt(2.0));
+            // Explicação:
+            // Queremos que no caso do pior cenário, em que sumx = sumy = 255, o resultado
+            // da operação se mantenha no intervalo de valores admitido, isto é, entre [0, 255].
+            // Se se considerar que:
+            // max = 255
+            // Então,
+            // sqrt(pow(max,2) + pow(max,2)) * k = max <=> sqrt(2*pow(max,2)) * k = max <=> k = max / (sqrt(2) * max) <=>
+            // k = 1 / sqrt(2)
+        }
+    }
+
+    // Calcular o histograma com o valor das magnitudes
+    for (i = 0; i < size; i++) {
+        hist[datadst[i]]++;
+    }
+
+    // Definir o threshold.
+    // O threshold é definido pelo nível de intensidade (das magnitudes)
+    // quando se atinge uma determinada percentagem de pixeis, definida pelo utilizador.
+    // Por exemplo, se o parâmetro 'th' tiver valor 0.8, significa the o threshold será o
+    // nível de magnitude, abaixo do qual estão pelo menos 80% dos pixeis.
+    histmax = 0.0f;
+    for (i = 0; i <= 255; i++) {
+        histmax += hist[i];
+
+        // th = Prewitt Threshold
+        if (histmax >= (((float)size) * th)) break;
+    }
+    histthreshold = i == 0 ? 1 : i;
+
+    // Aplicada o threshold
+    for (i = 0; i < size; i++) {
+        if (datadst[i] >= (unsigned char) histthreshold) datadst[i] = 255;
+        else datadst[i] = 0;
+    }
+
     return 0;
+}
+
+int vc_gray_edge_sobel(IVC *src, IVC *dst, float th) {
+    unsigned char *datasrc = (unsigned char *)src->data;
+    unsigned char *datadst = (unsigned char *)dst->data;
+    int width = src->width;
+    int height = src->height;
+    int bytesperline = src->bytesperline;
+    int channels = src->channels;
+    int x, y;
+    long int posX, posA, posB, posC, posD, posE, posF, posG, posH;
+    int i, size;
+    float histmax;
+    int histthreshold;
+    int sumx, sumy;
+    float hist[256] = { 0.0f };
+
+    // Verificação de erros
+    if ((src->width <= 0) || (src->height <= 0) || (src->data == NULL)) return 0;
+    if ((src->width != dst->width) || (src->height != dst->height) || (src->channels != dst->channels)) return 0;
+    if (channels != 1) return 0;
+
+    size = width * height;
+
+    for (y = 1; y < height - 1; y++) {
+        for (x = 1; x < width - 1; x++) {
+            posA = (y - 1) * bytesperline + (x - 1) * channels;
+            posB = (y - 1) * bytesperline + x * channels;
+            posC = (y - 1) * bytesperline + (x + 1) * channels;
+            posD = y * bytesperline + (x - 1) * channels;
+            posX = y * bytesperline + x * channels;
+            posE = y * bytesperline + (x + 1) * channels;
+            posF = (y + 1) * bytesperline + (x - 1) * channels;
+            posG = (y + 1) * bytesperline + x * channels;
+            posH = (y + 1) * bytesperline + (x + 1) * channels;
+
+            sumx = datasrc[posA] * -1;
+            sumx += datasrc[posD] * -2; // Peso dobrado comparado com Prewitt
+            sumx += datasrc[posF] * -1;
+            sumx += datasrc[posC] * +1;
+            sumx += datasrc[posE] * +2; // Peso dobrado comparado com Prewitt
+            sumx += datasrc[posH] * +1;
+
+            sumy = datasrc[posA] * -1;
+            sumy += datasrc[posB] * -2; // Peso dobrado comparado com Prewitt
+            sumy += datasrc[posC] * -1;
+            sumy += datasrc[posF] * +1;
+            sumy += datasrc[posG] * +2; // Peso dobrado comparado com Prewitt
+            sumy += datasrc[posH] * +1;
+
+            datadst[posX] = (unsigned char) (sqrt((double) (sumx*sumx + sumy*sumy)) / sqrt(2.0));
+        }
+    }
+
+    // Calcular o histograma com o valor das magnitudes
+    for (i = 0; i < size; i++) {
+        hist[datadst[i]]++;
+    }
+
+    // Definir o threshold.
+    histmax = 0.0f;
+    for (i = 0; i <= 255; i++) {
+        histmax += hist[i];
+        if (histmax >= (((float)size) * th)) break;
+    }
+    histthreshold = i == 0 ? 1 : i;
+
+    // Aplicar o threshold
+    for (i = 0; i < size; i++) {
+        if (datadst[i] >= (unsigned char) histthreshold) datadst[i] = 255;
+        else datadst[i] = 0;
+    }
+
+    return 1;
+}
+
+int vc_gray_lowpass_mean_filter(IVC *src, IVC *dst, int kernelsize) {
+    // Verificações iniciais: dimensões e canais
+    if (src == NULL || dst == NULL) return 0;
+    if (src->width != dst->width || src->height != dst->height) return 0;
+    if (src->channels != 1 || dst->channels != 1) return 0;
+
+    int width = src->width;
+    int height = src->height;
+    unsigned char* datasrc = (unsigned char*)src->data;
+    unsigned char* datadst = (unsigned char*)dst->data;
+    int offset = kernelsize / 2;
+    float sum;
+    int count;
+
+    // Processa cada pixel da imagem
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            sum = 0;
+            count = 0;
+
+            // Aplica o kernel na vizinhança do pixel
+            for (int ky = -offset; ky <= offset; ky++) {
+                for (int kx = -offset; kx <= offset; kx++) {
+                    int pos_x = x + kx;
+                    int pos_y = y + ky;
+
+                    // Verifica limites da imagem
+                    if (pos_x >= 0 && pos_x < width && pos_y >= 0 && pos_y < height) {
+                        sum += datasrc[pos_y * width + pos_x];
+                        count++;
+                    }
+                }
+            }
+
+            // Calcula a média e define o valor no destino
+            datadst[y * width + x] = (unsigned char)(sum / count);
+        }
+    }
+
+    return 1; // Sucesso
+}
+
+// Função para comparar valores (usada pelo qsort)
+int compare(const void *a, const void *b) {
+    unsigned char val1 = *(unsigned char *)a;
+    unsigned char val2 = *(unsigned char *)b;
+    return (val1 > val2) - (val1 < val2);
+}
+
+int vc_gray_lowpass_median_filter(IVC *src, IVC *dst, int kernelsize) {
+    // Verificações iniciais
+    if (src == NULL || dst == NULL) return 0;
+    if (src->width != dst->width || src->height != dst->height) return 0;
+    if (src->channels != 1 || dst->channels != 1) return 0;
+
+    int width = src->width;
+    int height = src->height;
+    unsigned char* datasrc = (unsigned char*)src->data;
+    unsigned char* datadst = (unsigned char*)dst->data;
+    int offset = kernelsize / 2;
+    unsigned char* neighborhood = malloc(kernelsize * kernelsize * sizeof(unsigned char));
+    int count;
+
+    // Processa cada pixel da imagem
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            count = 0;
+
+            // Coleta os valores dos pixels na vizinhança
+            for (int ky = -offset; ky <= offset; ky++) {
+                for (int kx = -offset; kx <= offset; kx++) {
+                    int pos_x = x + kx;
+                    int pos_y = y + ky;
+
+                    // Verifica os limites da imagem
+                    if (pos_x >= 0 && pos_x < width && pos_y >= 0 && pos_y < height) {
+                        neighborhood[count++] = datasrc[pos_y * width + pos_x];
+                    }
+                }
+            }
+
+            // Ordena a vizinhança e seleciona o valor mediano
+            qsort(neighborhood, count, sizeof(unsigned char), compare);
+            datadst[y * width + x] = neighborhood[count / 2];
+        }
+    }
+
+    free(neighborhood); // Libera memória alocada
+    return 1; // Sucesso
+}
+
+// Função auxiliar para calcular o peso gaussiano
+double gaussian(double x, double y, double sigma) {
+    return exp(-(x * x + y * y) / (2 * sigma * sigma)) / (2 * M_PI * sigma * sigma);
+}
+
+int vc_gray_lowpass_gaussian_filter(IVC *src, IVC *dst) {
+    if (src == NULL || dst == NULL) return 0;
+    if (src->width != dst->width || src->height != dst->height) return 0;
+    if (src->channels != 1 || dst->channels != 1) return 0;
+
+    int width = src->width;
+    int height = src->height;
+    unsigned char* datasrc = (unsigned char*)src->data;
+    unsigned char* datadst = (unsigned char*)dst->data;
+
+    // Definindo o tamanho do kernel e o sigma
+    int kernelsize = 5;  // Tamanho comum para bom detalhamento e performance
+    double sigma = 1.0;  // Desvio padrão comum
+    int offset = kernelsize / 2;
+
+    // Criação do kernel gaussiano
+    double* kernel = (double*)malloc(kernelsize * kernelsize * sizeof(double));
+    double sum = 0;
+    for (int ky = -offset; ky <= offset; ky++) {
+        for (int kx = -offset; kx <= offset; kx++) {
+            kernel[(ky + offset) * kernelsize + (kx + offset)] = gaussian(kx, ky, sigma);
+            sum += kernel[(ky + offset) * kernelsize + (kx + offset)];
+        }
+    }
+
+    // Normalização do kernel
+    for (int i = 0; i < kernelsize * kernelsize; i++) {
+        kernel[i] /= sum;
+    }
+
+    // Aplicação do filtro gaussiano
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            double weighted_sum = 0;
+            double weight_sum = 0;
+            for (int ky = -offset; ky <= offset; ky++) {
+                for (int kx = -offset; kx <= offset; kx++) {
+                    int pos_x = x + kx;
+                    int pos_y = y + ky;
+                    if (pos_x >= 0 && pos_x < width && pos_y >= 0 && pos_y < height) {
+                        weighted_sum += datasrc[pos_y * width + pos_x] * kernel[(ky + offset) * kernelsize + (kx + offset)];
+                        weight_sum += kernel[(ky + offset) * kernelsize + (kx + offset)];
+                    }
+                }
+            }
+            datadst[y * width + x] = (unsigned char)(weighted_sum / weight_sum);
+        }
+    }
+
+    free(kernel); // Libera memória alocada
+    return 1; // Sucesso
 }

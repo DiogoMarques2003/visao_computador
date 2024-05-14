@@ -896,6 +896,137 @@ int ex_vc8_gray_histogram_equalization() {
     return 0;
 }
 
+int ex_vc9_prewitt() {
+    IVC *image[2];
+
+    image[0] = vc_read_image("../Images/Classic/barbara.pgm");
+    if (image[0] == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image[1] = vc_image_new(image[0]->width, image[0]->height, 1, 255);
+    if (image[1] == NULL) {
+        vc_image_free(image[0]);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_gray_edge_prewitt(image[0], image[1], 0.8);
+
+    vc_write_image("../output/ex_vc9_prewitt.pgm", image[1]);
+    vc_image_free(image[0]);
+    vc_image_free(image[1]);
+}
+
+int ex_vc9_sobel() {
+    IVC *image[2];
+
+    image[0] = vc_read_image("../Images/Classic/barbara.pgm");
+    if (image[0] == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image[1] = vc_image_new(image[0]->width, image[0]->height, 1, 255);
+    if (image[1] == NULL) {
+        vc_image_free(image[0]);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_gray_edge_sobel(image[0], image[1], 0.8);
+
+    vc_write_image("../output/ex_vc9_sobel.pgm", image[1]);
+    vc_image_free(image[0]);
+    vc_image_free(image[1]);
+}
+
+int ex_vc10_gray_lowpass_mean_filter() {
+    IVC *image[2];
+
+    image[0] = vc_read_image("../Images/filtros/barbara-sp.pgm");
+    if (image[0] == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image[1] = vc_image_new(image[0]->width, image[0]->height, 1, 255);
+    if (image[1] == NULL) {
+        vc_image_free(image[0]);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_gray_lowpass_mean_filter(image[0], image[1], 9);
+
+    vc_write_image("../output/ex_vc10_gray_lowpass_mean_filter.pgm", image[1]);
+    vc_image_free(image[0]);
+    vc_image_free(image[1]);
+
+    return 1;
+}
+
+int ex_vc10_gray_lowpass_median_filter() {
+    IVC *image[2];
+
+    image[0] = vc_read_image("../Images/filtros/barbara-sp.pgm");
+    if (image[0] == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image[1] = vc_image_new(image[0]->width, image[0]->height, 1, 255);
+    if (image[1] == NULL) {
+        vc_image_free(image[0]);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_gray_lowpass_median_filter(image[0], image[1], 3);
+
+    vc_write_image("../output/ex_vc10_gray_lowpass_median_filter.pgm", image[1]);
+    vc_image_free(image[0]);
+    vc_image_free(image[1]);
+
+    return 1;
+}
+
+int ex_vc10_gray_lowpass_gaussian_filter() {
+    IVC *image[2];
+
+    image[0] = vc_read_image("../Images/filtros/barbara-sp.pgm");
+    if (image[0] == NULL) {
+        printf("ERROR -> vc_read_image():\n\tFile not found!\n");
+        getchar();
+        return 0;
+    }
+
+    image[1] = vc_image_new(image[0]->width, image[0]->height, 1, 255);
+    if (image[1] == NULL) {
+        vc_image_free(image[0]);
+        printf("ERROR -> vc_image_new():\n\tOut of memory!\n");
+        getchar();
+        return 0;
+    }
+
+    vc_gray_lowpass_gaussian_filter(image[0], image[1]);
+
+    vc_write_image("../output/ex_vc10_gray_lowpass_gaussian_filter.pgm", image[1]);
+    vc_image_free(image[0]);
+    vc_image_free(image[1]);
+
+    return 1;
+}
+
 int main() {
     //ex_vc3_1();
     //ex_vc3_2();
@@ -929,7 +1060,13 @@ int main() {
 
     //ex_vc7_labelling2();
 
-    ex_vc8_histogram_show();
+    //ex_vc8_histogram_show();
+    //ex_vc8_gray_histogram_equalization();
 
-    ex_vc8_gray_histogram_equalization();
+    //ex_vc9_prewitt();
+    //ex_vc9_sobel();
+
+    ex_vc10_gray_lowpass_mean_filter();
+    ex_vc10_gray_lowpass_median_filter();
+    ex_vc10_gray_lowpass_gaussian_filter();
 }
