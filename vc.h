@@ -116,3 +116,5 @@ int vc_gray_edge_sobel(IVC *src, IVC *dst, float th);
 int vc_gray_lowpass_mean_filter(IVC *src, IVC *dst, int kernelsize);
 int vc_gray_lowpass_median_filter(IVC *src, IVC *dst, int kernelsize);
 int vc_gray_lowpass_gaussian_filter(IVC *src, IVC *dst);
+int vc_gray_highpass_filter(IVC *src, IVC *dst);
+int vc_gray_highpass_filter_enhance(IVC *src, IVC *dst, int gain);

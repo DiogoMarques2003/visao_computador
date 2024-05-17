@@ -1860,3 +1860,73 @@ int vc_gray_lowpass_gaussian_filter(IVC *src, IVC *dst) {
     free(kernel); // Libera memória alocada
     return 1; // Sucesso
 }
+
+int vc_gray_highpass_filter(IVC *src, IVC *dst) {
+    if (src == NULL || dst == NULL) return 0;
+    if (src->width != dst->width || src->height != dst->height) return 0;
+    if (src->channels != 1 || dst->channels != 1) return 0;
+
+    int width = src->width;
+    int height = src->height;
+    unsigned char* datasrc = (unsigned char*)src->data;
+    unsigned char* datadst = (unsigned char*)dst->data;
+    unsigned char* datalowpass = (unsigned char*)malloc(width * height * sizeof(unsigned char));
+
+    if (datalowpass == NULL) return 0;  // Falha na alocação de memória
+
+    // Aplica filtro Gaussiano passa-baixa primeiro para criar a imagem de baixa frequência
+    IVC lowpass = {datalowpass, width, height, 1};
+    if (vc_gray_lowpass_gaussian_filter(src, &lowpass) == 0) {
+        free(datalowpass);
+        return 0;  // Falha ao aplicar o filtro gaussiano
+    }
+
+    // Subtrai a imagem de baixa frequência da imagem original para obter a imagem de alta frequência
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int index = y * width + x;
+            int highpass_value = datasrc[index] - datalowpass[index];
+            // Garantir que o resultado esteja dentro dos limites de 0 a 255
+            datadst[index] = (unsigned char)MAX(0, MIN(255, highpass_value));
+        }
+    }
+
+    free(datalowpass); // Libera memória alocada para a imagem de baixa frequência
+    return 1; // Sucesso
+}
+
+int vc_gray_highpass_filter_enhance(IVC *src, IVC *dst, int gain) {
+    if (src == NULL || dst == NULL) return 0;
+    if (src->width != dst->width || src->height != dst->height) return 0;
+    if (src->channels != 1 || dst->channels != 1) return 0;
+
+    int width = src->width;
+    int height = src->height;
+    unsigned char* datasrc = (unsigned char*)src->data;
+    unsigned char* datadst = (unsigned char*)dst->data;
+    unsigned char* datalowpass = (unsigned char*)malloc(width * height * sizeof(unsigned char));
+
+    if (datalowpass == NULL) return 0;  // Falha na alocação de memória
+
+    // Aplica filtro Gaussiano passa-baixa primeiro para criar a imagem de baixa frequência
+    IVC lowpass = {datalowpass, width, height, 1};
+    if (vc_gray_lowpass_gaussian_filter(src, &lowpass) == 0) {
+        free(datalowpass);
+        return 0;  // Falha ao aplicar o filtro gaussiano
+    }
+
+    // Subtrai a imagem de baixa frequência da imagem original e aplica o ganho
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int index = y * width + x;
+            int highpass_value = datasrc[index] - datalowpass[index];
+            int enhanced_value = highpass_value * gain;
+
+            // Garantir que o resultado esteja dentro dos limites de 0 a 255
+            datadst[index] = (unsigned char)MAX(0, MIN(255, enhanced_value));
+        }
+    }
+
+    free(datalowpass); // Libera memória alocada para a imagem de baixa frequência
+    return 1; // Sucesso
+}
